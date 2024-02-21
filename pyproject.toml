@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "transmanga"
+version = "0.1.0"
+description = "Translate manga"
+authors = ["tuhm1 <hmtu117@gmail.com>"]
+readme = "README.md"
+build = "build.py"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+manga-ocr = "^0.1.11"
+translators = "^5.8.9"
+mediapipe = "^0.10.9"
+pywebview = "^4.4.1"
+playwright = "^1.41.2"
+
+[tool.poetry.group.dev.dependencies]
+pyinstaller = "^6.3.0"
+poethepoet = "^0.24.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poe.tasks]
+build = '''pyinstaller
+--add-data transmanga/client/dist:transmanga/client/dist
+--add-data transmanga/detector.tflite:transmanga
+--collect-data mediapipe
+--hidden-import unidic_lite
+--collect-data unidic_lite
+--collect-binaries unidic_lite
+--collect-data manga_ocr
+--windowed
+--name transmanga
+--icon translate.ico
+--clean
+main.py'''
