@@ -6,10 +6,10 @@ import { Guide } from "./Guide";
 
 function App() {
   const [language, setLanguage] = createSignal(
-    localStorage.getItem("language") || "en",
+    localStorage.getItem("language") || "en"
   );
   const [translator, setTranslator] = createSignal(
-    localStorage.getItem("translator") || "Copilot",
+    localStorage.getItem("translator") || "Google"
   );
   const [files, setFiles] = createSignal([]);
   const [showGuide, setShowGuide] = createSignal(false);

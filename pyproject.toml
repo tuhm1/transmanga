@@ -12,7 +12,6 @@ manga-ocr = "^0.1.11"
 translators = "^5.8.9"
 mediapipe = "^0.10.9"
 pywebview = "^4.4.1"
-playwright = "^1.41.2"
 
 [tool.poetry.group.dev.dependencies]
 pyinstaller = "^6.3.0"
