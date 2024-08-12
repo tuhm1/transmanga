@@ -1,6 +1,6 @@
 # Transmanga
 
-Translate manga using Google Translate.
+Translate manga using Gemini AI or Google Translate.
 
 | Original                       | English                       |
 | ------------------------------ | ----------------------------- |

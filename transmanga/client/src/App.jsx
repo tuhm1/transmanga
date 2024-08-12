@@ -6,17 +6,26 @@ import { Guide } from "./Guide";
 
 function App() {
   const [language, setLanguage] = createSignal(
-    localStorage.getItem("language") || "en"
+    localStorage.getItem("language") || "en",
   );
   const [translator, setTranslator] = createSignal(
-    localStorage.getItem("translator") || "Google"
+    localStorage.getItem("translator") || "Gemini",
   );
-  const [files, setFiles] = createSignal([]);
   const [showGuide, setShowGuide] = createSignal(false);
+  const [submission, setSubmission] = createSignal();
   return (
     <div style={{ "max-width": "800px", margin: "auto" }}>
       <h1>Transmanga</h1>
-      <form>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setSubmission({
+            language: language(),
+            translator: translator(),
+            files: [...e.target.files.files],
+          });
+        }}
+      >
         <div>
           <label>Language </label>
           <select
@@ -44,15 +53,33 @@ function App() {
               <option value={name}>{name}</option>
             ))}
           </select>
+
+          <Show when={translator() === "Gemini"}>
+            <div>
+              <label>Gemini API Key</label>{" "}
+              <input
+                required
+                onChange={(e) => pywebview.api.set_gemini_key(e.target.value)}
+                autoComplete="off"
+              />
+              <div>
+                Don't have an API Key yet? Create one for free at{" "}
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                >
+                  Google AI Studio
+                </a>
+                .
+              </div>
+            </div>
+          </Show>
         </div>
         <div>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            required
-            onChange={(e) => setFiles([...e.target.files])}
-          />
+          <input name="files" type="file" multiple accept="image/*" required />
+        </div>
+        <div>
+          <button type="submit">Translate</button>
         </div>
       </form>
       <div>
@@ -61,11 +88,11 @@ function App() {
           <Guide />
         </Show>
       </div>
-      {files()?.length > 0 && (
+      {submission() && (
         <TranslateList
-          language={language()}
-          translator={translator()}
-          files={files()}
+          language={submission().language}
+          translator={submission().translator}
+          files={submission().files}
         />
       )}
     </div>

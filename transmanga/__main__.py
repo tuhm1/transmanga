@@ -12,6 +12,8 @@ import json
 import pathlib
 from concurrent import futures
 import os
+import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
 
 def main():
@@ -27,6 +29,8 @@ def main():
 
     mocr_executor = futures.ThreadPoolExecutor()
     future_mocr = mocr_executor.submit(MangaOcr)
+
+    gemini = genai.GenerativeModel("gemini-1.5-flash")
 
     class Api:
         def detect(self, img_b64: str):
@@ -50,6 +54,24 @@ def main():
                 joined_texts, to_language=language, translator="google"
             )
             return joined_translations.split("\n")
+
+        def set_gemini_key(self, key: str):
+            genai.configure(api_key=key)
+
+        def translate_gemini(self, texts: list[str], language: str):
+            joined_texts = "\n".join(texts)
+            response = gemini.generate_content(
+                f"Act as a professional translator, translate these sentences into {language}."
+                " Answer with only the translated sentences, separated by a line break."
+                f"\n\nThe sentences are:\n{joined_texts}",
+                safety_settings={
+                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                },
+            )
+            return response.text.split("\n")
 
     # fix https://github.com/python/cpython/issues/88141
     mime.add_type("text/javascript", ".js")
