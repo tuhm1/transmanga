@@ -14,7 +14,8 @@
     "interactjs": "^1.10.23",
     "jszip": "^3.10.1",
     "p-queue": "^7.4.1",
-    "solid-js": "^1.8.5"
+    "solid-js": "^1.8.5",
+    "sweetalert": "^2.1.2"
   },
   "devDependencies": {
     "prettier": "3.2.5",

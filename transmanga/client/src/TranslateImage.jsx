@@ -3,6 +3,7 @@ import { detect } from "./detect";
 import { translators } from "./translators";
 import { TextBox } from "./TextBox";
 import { RectangleSelect } from "./RectangleSelect";
+import swal from "sweetalert";
 
 export function TranslateImage(props) {
   const addTextBox = (position) => {
@@ -50,11 +51,16 @@ export function TranslateImage(props) {
       props.language,
       priority(),
       abortController.signal,
-    ).then((translations) => {
-      props.image.textBoxes.forEach((textBox, index) => {
-        textBox.translation = translations[index];
+    )
+      .then((translations) => {
+        props.image.textBoxes.forEach((textBox, index) => {
+          textBox.translation = translations[index];
+        });
+      })
+      .catch((e) => {
+        if (e.name === "AbortError") return;
+        swal("Error", e.message, "error");
       });
-    });
     onCleanup(() => abortController.abort());
   });
 
