@@ -1,85 +1,125 @@
-import { For, createEffect, onCleanup } from "solid-js";
-import { detect } from "./detect";
-import { translators } from "./translators";
-import { TextBox } from "./TextBox";
-import { RectangleSelect } from "./RectangleSelect";
+import { For } from "solid-js";
 import swal from "sweetalert";
+import { RectangleSelect } from "./RectangleSelect";
+import { TextBox } from "./TextBox";
+import { ocrTextBox } from "./ocrTextBox";
+import { translateText } from "./translateText";
 
 export function TranslateImage(props) {
   const addTextBox = (position) => {
     props.image.textBoxes.push({ position, image: props.image });
-    props.image.textBoxes.sort((a, b) => a.position.y - b.position.y);
+    ocrTextBox(props.image.textBoxes.at(-1));
   };
-  const priority = () => -props.image.index * 1000000000;
 
-  createEffect(() => {
-    const controller = new AbortController();
-    props.image.url = URL.createObjectURL(props.image.file);
-    props.image.textBoxes = [];
-    props.image.htmlElement = document.createElement("img");
-    props.image.htmlElement.src = props.image.url;
-    props.image.htmlElement.onload = async () => {
-      const { detections } = await detect(
-        props.image.file,
-        priority(),
-        controller.signal,
-      );
-      detections.forEach(
-        ({ bounding_box: { origin_x, origin_y, width, height } }) => {
-          addTextBox({
-            x: origin_x / props.image.htmlElement.naturalWidth,
-            y: origin_y / props.image.htmlElement.naturalHeight,
-            width: width / props.image.htmlElement.naturalWidth,
-            height: height / props.image.htmlElement.naturalHeight,
-          });
-        },
-      );
-    };
-    onCleanup(() => controller.abort());
-  });
+  let translationDialogRef;
+  let textsRef;
+  let translationsRef;
 
-  createEffect(() => {
-    if (
-      props.image.textBoxes.length === 0 ||
-      props.image.textBoxes.some((textBox) => textBox.text === undefined)
-    )
-      return;
-    const abortController = new AbortController();
-    const texts = props.image.textBoxes.map((textBox) => textBox.text);
-    translators[props.translator](
-      texts,
-      props.language,
-      priority(),
-      abortController.signal,
-    )
-      .then((translations) => {
-        props.image.textBoxes.forEach((textBox, index) => {
-          textBox.translation = translations[index];
-        });
-      })
-      .catch((e) => {
-        if (e.name === "AbortError") return;
-        swal("Error", e.message, "error");
-      });
-    onCleanup(() => abortController.abort());
-  });
+  const onSetTranslations = (e) => {
+    e.preventDefault();
+    const texts = textsRef.value.split("\n");
+    props.image.textBoxes.forEach((textBox, index) => {
+      textBox.text = texts[index];
+    });
+    const translations = translationsRef.value.split("\n");
+    props.image.textBoxes.forEach((textBox, index) => {
+      textBox.translation = translations[index];
+    });
+    translationDialogRef.close();
+  };
 
   return (
-    <div style={{ position: "relative" }}>
-      <img src={props.image.url} style={{ display: "block", width: "100%" }} />
-      <RectangleSelect
-        onSelect={addTextBox}
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          width: "100%",
-          height: "100%",
-        }}
-      />
-      <For each={props.image.textBoxes}>
-        {(textBox) => <TextBox textBox={textBox} language={props.language} />}
-      </For>
+    <div>
+      <div style={{ position: "relative" }}>
+        <img
+          src={props.image.url}
+          style={{ display: "block", width: "100%" }}
+        />
+        <RectangleSelect
+          onSelect={addTextBox}
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: "100%",
+            height: "100%",
+          }}
+        />
+        <For each={props.image.textBoxes}>
+          {(textBox) => <TextBox textBox={textBox} />}
+        </For>
+      </div>
+      <div>
+        <button
+          onClick={() =>
+            translateText(props.image).catch((e) =>
+              swal("Error", e.message, "error"),
+            )
+          }
+        >
+          Translate text
+        </button>
+        <button
+          onClick={() => {
+            translationDialogRef.showModal();
+            translationsRef.focus();
+          }}
+        >
+          Set translation
+        </button>
+      </div>
+      <dialog ref={translationDialogRef} style={{ width: "800px" }}>
+        <form onSubmit={onSetTranslations}>
+          <h3>Translation</h3>
+          <div>
+            <div>
+              <label>Texts</label>
+            </div>
+            <div>
+              <textarea
+                ref={textsRef}
+                value={props.image.textBoxes
+                  .map((textBox) => textBox.text)
+                  .join("\n")}
+                rows={props.image.textBoxes.length}
+                style={{ width: "100%" }}
+              />
+            </div>
+            <div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    props.image.textBoxes
+                      .map((textBox) => textBox.text)
+                      .join("\n"),
+                  );
+                }}
+                type="button"
+              >
+                Copy text
+              </button>
+            </div>
+          </div>
+          <div>
+            <div>
+              <label>Translations</label>
+            </div>
+            <div>
+              <textarea
+                value={props.image.textBoxes
+                  .map((textBox) => textBox.translation)
+                  .join("\n")}
+                ref={translationsRef}
+                rows={props.image.textBoxes.length}
+                style={{ width: "100%" }}
+              />
+            </div>
+          </div>
+          <div>
+            <button>Apply</button>
+          </div>
+        </form>
+      </dialog>
     </div>
   );
 }

@@ -1,39 +1,13 @@
-import { For, createEffect, createSignal } from "solid-js";
-import { createMutable } from "solid-js/store";
+import { For } from "solid-js";
 import { TranslateImage } from "./TranslateImage";
-import { exportImages } from "./exportImages";
+import { state } from "./state";
 
 export function TranslateList(props) {
-  const state = createMutable();
-  const [exporting, setExporting] = createSignal(false);
-  createEffect(() => {
-    state.images = props.files.map((file, index) => ({ file, index }));
-  });
   return (
     <div>
-      <div>
-        <For each={state.images}>
-          {(image) => (
-            <TranslateImage
-              image={image}
-              language={props.language}
-              translator={props.translator}
-            />
-          )}
-        </For>
-      </div>
-      <div>
-        <button
-          disabled={exporting()}
-          onClick={async () => {
-            setExporting(true);
-            await exportImages(state.images);
-            setExporting(false);
-          }}
-        >
-          Export
-        </button>
-      </div>
+      <For each={state.images}>
+        {(image) => <TranslateImage image={image} />}
+      </For>
     </div>
   );
 }

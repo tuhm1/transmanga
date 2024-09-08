@@ -1,36 +1,25 @@
 import interact from "interactjs";
-import { Show, createEffect, createSignal, onCleanup } from "solid-js";
-import { ocr } from "./ocr";
+import { Show, createEffect, createSignal } from "solid-js";
 import { fitText } from "./fitText";
-import { cropImage } from "./cropImage";
+import { ocrTextBox } from "./ocrTextBox";
+import { state } from "./state";
 import { TextBoxMenu } from "./TextBoxMenu";
 
 export function TextBox(props) {
-  const [settled, setSettled] = createSignal(true);
-  const priority = () =>
-    -props.textBox.image.index * 1000000000 - props.textBox.position.y;
-
-  createEffect(() => {
-    props.textBox.text = props.textBox.translation = undefined;
-    if (!settled()) return;
-    const controller = new AbortController();
-    cropImage(props.textBox.image.htmlElement, props.textBox.position).then(
-      async (cropped) => {
-        props.textBox.text = await ocr(cropped, priority(), controller.signal);
-      },
-    );
-    onCleanup(() => controller.abort());
-  });
-
   const textContent = () => props.textBox.translation || props.textBox.text;
   let ref;
-  createEffect(() => textContent() && fitText(ref));
+  createEffect(() => {
+    if (!textContent()) return;
+    //react when position changes
+    props.textBox.position;
+    fitText(ref);
+  });
 
   const [menu, setMenu] = createSignal();
 
   return (
     <div
-      lang={props.language}
+      lang={state.language}
       style={{
         position: "absolute",
         left: props.textBox.position.x * 100 + "%",
@@ -49,8 +38,8 @@ export function TextBox(props) {
       }}
       ref={(node) => {
         interact(node)
-          .on("dragstart", () => setSettled(false))
-          .on("dragend", () => setSettled(true))
+          .on("dragstart", () => (props.textBox.text = undefined))
+          .on("dragend", () => ocrTextBox(props.textBox))
           .draggable({
             listeners: {
               move(e) {
@@ -66,8 +55,8 @@ export function TextBox(props) {
               },
             },
           })
-          .on("resizestart", () => setSettled(false))
-          .on("resizeend", () => setSettled(true))
+          .on("resizestart", () => (props.textBox.text = undefined))
+          .on("resizeend", () => ocrTextBox(props.textBox))
           .resizable({
             edges: { top: true, left: true, bottom: true, right: true },
             listeners: {

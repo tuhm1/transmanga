@@ -1,37 +1,25 @@
 import { Show, createSignal } from "solid-js";
-import { languages } from "./languages";
-import { translators } from "./translators";
-import { TranslateList } from "./TranslateList";
+import { exportImages } from "./exportImages";
 import { Guide } from "./Guide";
+import { languages } from "./languages";
+import { state } from "./state";
+import { translateAuto } from "./translateAuto";
+import { TranslateList } from "./TranslateList";
+import { translators } from "./translators";
 
 function App() {
-  const [language, setLanguage] = createSignal(
-    localStorage.getItem("language") || "en",
-  );
-  const [translator, setTranslator] = createSignal(
-    localStorage.getItem("translator") || "Gemini",
-  );
   const [showGuide, setShowGuide] = createSignal(false);
-  const [submission, setSubmission] = createSignal();
+  const [exporting, setExporting] = createSignal(false);
   return (
     <div style={{ "max-width": "800px", margin: "auto" }}>
       <h1>Transmanga</h1>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          setSubmission({
-            language: language(),
-            translator: translator(),
-            files: [...e.target.files.files],
-          });
-        }}
-      >
+      <form>
         <div>
           <label>Language </label>
           <select
-            value={language()}
+            value={state.language}
             onChange={(e) => {
-              setLanguage(e.target.value);
+              state.language = e.target.value;
               localStorage.setItem("language", e.target.value);
             }}
           >
@@ -43,9 +31,9 @@ function App() {
         <div>
           <label>Translator </label>
           <select
-            value={translator()}
+            value={state.translator}
             onChange={(e) => {
-              setTranslator(e.target.value);
+              state.translator = e.target.value;
               localStorage.setItem("translator", e.target.value);
             }}
           >
@@ -54,7 +42,7 @@ function App() {
             ))}
           </select>
 
-          <Show when={translator() === "Gemini"}>
+          <Show when={state.translator === "Gemini"}>
             <div>
               <label>Gemini API Key</label>{" "}
               <input
@@ -76,10 +64,27 @@ function App() {
           </Show>
         </div>
         <div>
-          <input name="files" type="file" multiple accept="image/*" required />
+          <input
+            name="files"
+            type="file"
+            multiple
+            accept="image/*"
+            required
+            onChange={(e) => {
+              state.images = [...e.target.files].map((file) => {
+                const url = URL.createObjectURL(file);
+                const textBoxes = [];
+                const htmlElement = document.createElement("img");
+                htmlElement.src = url;
+                return { file, url, textBoxes, htmlElement };
+              });
+            }}
+          />
         </div>
         <div>
-          <button type="submit">Translate</button>
+          <button type="button" onClick={() => translateAuto()}>
+            Translate Auto
+          </button>
         </div>
       </form>
       <div>
@@ -88,13 +93,19 @@ function App() {
           <Guide />
         </Show>
       </div>
-      {submission() && (
-        <TranslateList
-          language={submission().language}
-          translator={submission().translator}
-          files={submission().files}
-        />
-      )}
+      <TranslateList />
+      <div>
+        <button
+          disabled={exporting()}
+          onClick={async () => {
+            setExporting(true);
+            await exportImages(state.images);
+            setExporting(false);
+          }}
+        >
+          Export
+        </button>
+      </div>
     </div>
   );
 }
