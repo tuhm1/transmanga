@@ -14,6 +14,7 @@ from concurrent import futures
 import os
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
+import textwrap
 
 
 def main():
@@ -30,7 +31,25 @@ def main():
     mocr_executor = futures.ThreadPoolExecutor()
     future_mocr = mocr_executor.submit(MangaOcr)
 
-    gemini = genai.GenerativeModel("gemini-1.5-flash")
+    system_instruction = textwrap.dedent(
+        """You are a highly skilled professional translator. Translate the following sentences into the specified target language, ensuring accuracy and maintaining the original meaning and tone.
+
+        Input:
+        Target Language: <target language>
+        Sentences:
+        <Sentence 1>
+        <Sentence 2>
+        ...
+
+        Output:
+        <Translation of Sentence 1>
+        <Translation of Sentence 2>
+        ...
+        """
+    )
+    gemini = genai.GenerativeModel(
+        "gemini-2.0-flash", system_instruction=system_instruction
+    )
 
     class Api:
         def detect(self, img_b64: str):
@@ -61,9 +80,12 @@ def main():
         def translate_gemini(self, texts: list[str], language: str):
             joined_texts = "\n".join(texts)
             response = gemini.generate_content(
-                f"Act as a professional translator, translate these sentences into {language}."
-                " Answer with only the translated sentences, separated by a line break."
-                f"\n\nThe sentences are:\n{joined_texts}",
+                textwrap.dedent(
+                    f"""Target Language: {language}
+                    Sentences:
+                    {joined_texts}
+                    """
+                ),
                 safety_settings={
                     HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
                     HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
