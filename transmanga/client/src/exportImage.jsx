@@ -18,9 +18,10 @@ export async function exportImage(image) {
             display: "flex",
             "align-items": "center",
             "justify-content": "center",
-            background: "white",
-            "overflow-wrap": "anywhere",
+            background: "rgba(255, 255, 255, 0.8)",
             hyphens: "auto",
+            "text-align": "center",
+            "font-family": "Arial",
           }}
           ref={(ref) => (textRefs[i] = ref)}
         >

@@ -1,9 +1,8 @@
 import interact from "interactjs";
-import { Show, createEffect, createSignal } from "solid-js";
+import { createEffect } from "solid-js";
 import { fitText } from "./fitText";
 import { ocrTextBox } from "./ocrTextBox";
 import { state } from "./state";
-import { TextBoxMenu } from "./TextBoxMenu";
 
 export function TextBox(props) {
   const textContent = () => props.textBox.translation || props.textBox.text;
@@ -15,24 +14,19 @@ export function TextBox(props) {
     fitText(ref);
   });
 
-  const [menu, setMenu] = createSignal();
-
   return (
     <div
       lang={state.language}
+      class="textbox"
       style={{
         position: "absolute",
         left: props.textBox.position.x * 100 + "%",
         top: props.textBox.position.y * 100 + "%",
         width: props.textBox.position.width * 100 + "%",
         height: props.textBox.position.height * 100 + "%",
-        border: "1px solid blue",
-        background: textContent() && "white",
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "center",
-        "overflow-wrap": "anywhere",
-        hyphens: "auto",
+        border: "1px solid black",
+        background: "rgba(255, 255, 255, 0.8)",
+
         "touch-action": "none",
         "user-select": "none",
       }}
@@ -75,19 +69,30 @@ export function TextBox(props) {
           });
         ref = node;
       }}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        setMenu(e);
-      }}
     >
-      {textContent()}
-      <Show when={menu()}>
-        <TextBoxMenu
-          textBox={props.textBox}
-          position={menu()}
-          onClose={() => setMenu()}
-        />
-      </Show>
+      <button
+        class="remove"
+        onClick={() => {
+          props.textBox.image.textBoxes = props.textBox.image.textBoxes.filter(
+            (element) => element !== props.textBox
+          );
+        }}
+      >
+        ✕
+      </button>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          "align-items": "center",
+          "justify-content": "center",
+          hyphens: "auto",
+          "text-align": "center",
+        }}
+      >
+        {textContent()}
+      </div>
     </div>
   );
 }

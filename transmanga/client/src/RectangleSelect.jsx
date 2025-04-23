@@ -39,7 +39,7 @@ export function RectangleSelect(props) {
             top: selection().y * 100 + "%",
             width: selection().width * 100 + "%",
             height: selection().height * 100 + "%",
-            border: "1px dashed blue",
+            border: "1px dashed black",
           }}
         />
       </Show>

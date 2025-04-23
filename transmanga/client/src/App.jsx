@@ -6,12 +6,15 @@ import { state } from "./state";
 import { translateAuto } from "./translateAuto";
 import { TranslateList } from "./TranslateList";
 import { translators } from "./translators";
+import "./styles.css";
 
 function App() {
   const [showGuide, setShowGuide] = createSignal(false);
   const [exporting, setExporting] = createSignal(false);
   return (
-    <div style={{ "max-width": "800px", margin: "auto" }}>
+    <div
+      style={{ "max-width": "800px", margin: "auto", "font-family": "Arial" }}
+    >
       <h1>Transmanga</h1>
       <form>
         <div>
